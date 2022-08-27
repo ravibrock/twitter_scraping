@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 import time
 
-twitter_id = input("\nUser ID: ")
+twitter_username = input("\nUsername: ")
 file = input("CSV file to save results: ")
 min_common = int(input("Minimum number of common followers: "))
 
@@ -18,9 +18,7 @@ while current_token < token_count:
 start_time_int = int(time.time())
 start_time = time.localtime(start_time_int)
 start_time = time.strftime("%H:%M:%S", start_time)
-print(f"Start time: {start_time}")
-
-print("")
+print(f"Start time: {start_time}\n")
 
 
 def create_following_url(user_id):
@@ -90,6 +88,7 @@ def followers_request(url, starting_token):
             resume_time = time.localtime(current_time + 900)
             print("All tokens used. Sleeping until", time.strftime("%H:%M:%S", resume_time), "to avoid rate limit")
             time.sleep(900)
+            print("")
             token = 0
             response = connect_followers_endpoint(url, token)
 
@@ -115,6 +114,7 @@ def execute_request(url, starting_token):
             resume_time = time.localtime(current_time + 900)
             print("All tokens used. Sleeping until", time.strftime("%H:%M:%S", resume_time), "to avoid rate limit")
             time.sleep(900)
+            print("")
             token = 0
             response = connect_to_endpoint(url, params, token)
 
@@ -140,6 +140,7 @@ def paginated_request(url, pagination_token, starting_token):
             resume_time = time.localtime(current_time + 900)
             print("All tokens used. Sleeping until", time.strftime("%H:%M:%S", resume_time), "to avoid rate limit")
             time.sleep(900)
+            print("")
             token = 0
             response = connect_to_endpoint(url, params, token)
 
@@ -182,7 +183,11 @@ def process_following(data):
 
 def general_following():
     starting_token = 0
-    data = pull_following(twitter_id, starting_token)
+    url = create_followers_url(twitter_username)
+    user_id = followers_request(url, starting_token)
+    user_id = user_id[0][0]["data"]["id"]
+
+    data = pull_following(user_id, starting_token)
 
     main_data = data[0]
     starting_token = data[1]
@@ -207,6 +212,18 @@ def general_following():
     return follows
 
 
+def remove_holes(data, token):
+    username = data.iloc[0]["username"]
+    url = create_followers_url(username)
+    response = followers_request(url, token)
+    new_token = response[1]
+    response = response[0][0]
+    followers_count = response["data"]["public_metrics"]["followers_count"]
+    index_number = data.index[0]
+
+    return [index_number, followers_count, new_token]
+
+
 def analyze_following(data):
     count = list(data["username"])
     count = Counter(count)
@@ -223,17 +240,12 @@ def analyze_following(data):
     data2.columns = ["username", "common_followers", "total_followers"]
 
     data3 = data2.loc[data2["total_followers"] == 0]
-    start_row = 0
-    end_row = len(data3.index)
-    while start_row < end_row:
-        url = data3.iloc[start_row]["username"]
-        url = create_followers_url(url)
-        response = followers_request(url, 0)
-        response = response[0][0]
-        followers_count = response["data"]["public_metrics"]["followers_count"]
-        index_number = data3.index[start_row]
-        data2.at[index_number, "total_followers"] = followers_count
-        start_row += 1
+    token = 0
+    while len(data3.index) > 0:
+        holeremoved = remove_holes(data3, token)
+        data2.at[holeremoved[0], "total_followers"] = holeremoved[1]
+        token = holeremoved[2]
+        data3 = data2.loc[data2["total_followers"] == 0]
 
     data2 = data2.loc[data2["total_followers"] != 0]
     data2["common_by_total"] = data2.apply(lambda row: row.common_followers / row.total_followers * 100, axis=1)
@@ -255,7 +267,7 @@ def main():
     output = output.sort_values(by=["common_followers"], ascending=False)
     output.to_csv(file, index=False)
 
-    print("\nUser inputs:\n", f" Twitter ID: {twitter_id}\n", f" File location: {file}\n",
+    print("\nUser inputs:\n", f" Twitter ID: {twitter_username}\n", f" File location: {file}\n",
           f" Bearer token count: {token_count}")
     i = 0
     while i < token_count:
