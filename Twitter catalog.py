@@ -212,7 +212,7 @@ def general_following():
     return follows
 
 
-def remove_holes(data, token):
+def remove_hole(data, token):
     username = data.iloc[0]["username"]
     url = create_followers_url(username)
     response = followers_request(url, token)
@@ -239,13 +239,13 @@ def analyze_following(data):
     data2.insert(2, "followers", extracted_col.values)
     data2.columns = ["username", "common_followers", "total_followers"]
 
-    data3 = data2.loc[data2["total_followers"] == 0]
+    data3 = data2.loc[data2["common_followers"] > data2["total_followers"]]
     token = 0
     while len(data3.index) > 0:
-        holeremoved = remove_holes(data3, token)
+        holeremoved = remove_hole(data3, token)
         data2.at[holeremoved[0], "total_followers"] = holeremoved[1]
         token = holeremoved[2]
-        data3 = data2.loc[data2["total_followers"] == 0]
+        data3 = data2.loc[data2["common_followers"] > data2["total_followers"]]
 
     data2 = data2.loc[data2["total_followers"] != 0]
     data2["common_by_total"] = data2.apply(lambda row: row.common_followers / row.total_followers * 100, axis=1)
