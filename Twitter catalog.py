@@ -284,7 +284,7 @@ def main():
     time_elapsed = end_time_int - start_time_int
     time_elapsed = time.gmtime(time_elapsed)
     time_elapsed = time.strftime("%H:%M:%S", time_elapsed)
-    print(f"Time elapsed: {time_elapsed}\n")
+    print(f"Time elapsed: {time_elapsed}")
 
 
 if __name__ == "__main__":
