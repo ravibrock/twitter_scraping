@@ -1,4 +1,5 @@
 from collections import Counter
+from pwinput import pwinput
 import json
 import pandas as pd
 import requests
@@ -12,7 +13,7 @@ current_token = 0
 token_count = int(input("Number of bearer tokens: "))
 bearer_token = ["x"] * token_count
 while current_token < token_count:
-    bearer_token[current_token] = input(f"Token {current_token + 1}: ")
+    bearer_token[current_token] = pwinput(prompt=f"Token {current_token + 1}: ", mask="*")
     current_token += 1
 
 start_time_int = int(time.time())
@@ -267,11 +268,11 @@ def main():
     output = output.sort_values(by=["common_followers"], ascending=False)
     output.to_csv(file, index=False)
 
-    print("\nUser inputs:\n", f" Twitter ID: {twitter_username}\n", f" File location: {file}\n",
+    print("\nUser inputs:\n", f" Username: {twitter_username}\n", f" File location: {file}\n",
           f" Bearer token count: {token_count}")
     i = 0
     while i < token_count:
-        print(f"  Token {i + 1}: {bearer_token[i]}")
+        print(f"  Token {i + 1}: {bearer_token[i][0:3]}...{bearer_token[i][111:114]}")
         i += 1
 
     print(f"\nStart time: {start_time}")
