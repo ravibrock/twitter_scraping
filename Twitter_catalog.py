@@ -2,7 +2,7 @@ from collections import Counter
 import json
 import pandas as pd
 import time
-from Twitter-library import create_following_url, create_followers_url, execute_request, get_bearer_tokens
+from Twitter_library import create_following_url, create_followers_url, execute_request, get_bearer_tokens
 
 
 def get_params():
